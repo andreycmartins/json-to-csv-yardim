@@ -74,6 +74,20 @@ export default function Home() {
     return csvRows.join('\n')
   }
 
+  const transformJsonString = (text: string): JsonObject[] => {
+    if (!text) return []
+
+    const jsonArray = JSON.parse(text.replace(/(\w+):/g, '"$1":'))
+
+    return jsonArray.map((item: JsonObject) => {
+      const transformedItem: JsonObject = {}
+      for (const key in item) {
+        transformedItem[key] = String(item[key])
+      }
+      return transformedItem
+    })
+  }
+
   const downloadCsv = (csvContent: string, filename = 'json-converted.csv') => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -102,20 +116,6 @@ export default function Home() {
   const cleanInput = () => {
     setText('')
     setCreatedCsv('')
-  }
-
-  const transformJsonString = (text: string): JsonObject[] => {
-    if (!text) return []
-
-    const jsonArray = JSON.parse(text.replace(/(\w+):/g, '"$1":'))
-
-    return jsonArray.map((item: JsonObject) => {
-      const transformedItem: JsonObject = {}
-      for (const key in item) {
-        transformedItem[key] = String(item[key])
-      }
-      return transformedItem
-    })
   }
 
   const handleConfirm = (text: string) => {
