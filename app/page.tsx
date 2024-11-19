@@ -51,6 +51,7 @@ export default function Home() {
   const [text, setText] = useState('')
   const [isTextValid, setIsTextValid] = useState(false)
   const [createdCsv, setCreatedCsv] = useState('')
+  const [parsedData, setParsedData] = useState<JsonData[]>([])
 
   const jsonToCsv = (jsonData: JsonData) => {
     if (!jsonData || (Array.isArray(jsonData) && jsonData.length === 0)) {
@@ -77,7 +78,9 @@ export default function Home() {
   const transformJsonString = (text: string): JsonObject[] => {
     if (!text) return []
 
-    const jsonArray = JSON.parse(text.replace(/(\w+):/g, '"$1":'))
+    const jsonData = JSON.parse(text.replace(/(\w+):/g, '"$1":'))
+
+    const jsonArray = Array.isArray(jsonData) ? jsonData : [jsonData]
 
     return jsonArray.map((item: JsonObject) => {
       const transformedItem: JsonObject = {}
@@ -87,7 +90,6 @@ export default function Home() {
       return transformedItem
     })
   }
-
   const downloadCsv = (csvContent: string, filename = 'json-converted.csv') => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -120,11 +122,18 @@ export default function Home() {
     setCreatedCsv('')
   }
 
-  const handleConfirm = (text: string) => {
+  const handleConfirm = () => {
     if (!isTextValid) return
-    const jsonData = json5.parse(text)
-    const csv = jsonToCsv(jsonData)
-    setCreatedCsv(csv)
+
+    try {
+      const jsonData = json5.parse(text)
+      const transformedData = transformJsonString(text)
+      setParsedData(transformedData)
+      const csv = jsonToCsv(jsonData)
+      setCreatedCsv(csv)
+    } catch {
+      setIsTextValid(false)
+    }
   }
 
   return (
@@ -163,7 +172,9 @@ export default function Home() {
               />
 
               {text.length > 0 && !isTextValid && (
-                <p className="text-sm text-red-800 mt-1">JSON inválido!</p>
+                <p className="text-sm text-red-800 mt-1">
+                  Insira um JSON plano válido!
+                </p>
               )}
 
               <Button
@@ -172,7 +183,7 @@ export default function Home() {
                     ? 'bg-[#2465b1] hover:bg-[#1d578f]'
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
-                onClick={() => handleConfirm(text)}
+                onClick={handleConfirm}
                 disabled={!isTextValid}
               >
                 <span>Converter</span>
@@ -185,7 +196,7 @@ export default function Home() {
                 <label className="text-sm font-medium text-gray-600 block mb-4">
                   Saída do CSV:
                 </label>
-                <CsvTable parsedData={transformJsonString(text)} />
+                <CsvTable parsedData={parsedData} />
                 <div className="flex justify-center mt-4">
                   <Button
                     className="px-4 py-2 bg-[#0d8842] hover:bg-green-600 text-white rounded-lg shadow-md flex items-center gap-2"
