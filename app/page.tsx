@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Delete, Download, FileJson } from 'lucide-react'
 import Papa from 'papaparse'
+import json5 from 'json5'
 
 type JsonValue = string | number | boolean | null
 type JsonObject = Record<string, JsonValue>
@@ -114,7 +115,7 @@ export default function Home() {
 
   const handleConfirm = (text: string) => {
     try {
-      const jsonData = JSON.parse(text)
+      const jsonData = json5.parse(text)
       const csv = jsonToCsv(jsonData)
       setCreatedCsv(csv)
       setIsTextValid(true)
@@ -169,7 +170,7 @@ export default function Home() {
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
                 onClick={() => handleConfirm(text)}
-                disabled={!isTextValid}
+                // disabled={!isTextValid}
               >
                 <span>Converter</span>
                 <FileJson className="w-5 h-5" />
