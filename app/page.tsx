@@ -4,21 +4,12 @@ import { ReactNode, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Delete, Download, FileJson } from 'lucide-react'
-import Papa from 'papaparse'
 import json5 from 'json5'
 
 type JsonValue = string | number | boolean | null
 type JsonObject = Record<string, JsonValue>
 type JsonData = JsonObject | JsonObject[]
-const CsvTable = ({ csvData }: { csvData: string }) => {
-  const parsedData = Papa.parse(csvData, {
-    header: true,
-  }).data
-
-  if (!csvData || parsedData.length === 0) {
-    return <p className="text-gray-500">Nenhum dado disponível</p>
-  }
-
+const CsvTable = ({ parsedData }: { parsedData: JsonData[] }) => {
   return (
     <div className="w-full overflow-x-auto">
       <table className="min-w-full border-collapse border border-gray-300 shadow-md">
@@ -101,7 +92,7 @@ export default function Home() {
     setText(newText)
 
     try {
-      JSON.parse(newText)
+      json5.parse(newText)
       setIsTextValid(true)
     } catch {
       setIsTextValid(false)
@@ -113,15 +104,24 @@ export default function Home() {
     setCreatedCsv('')
   }
 
+  const transformJsonString = (text: string): JsonObject[] => {
+    if (!text) return []
+
+    const jsonArray = JSON.parse(text.replace(/(\w+):/g, '"$1":'))
+
+    return jsonArray.map((item: JsonObject) => {
+      const transformedItem: JsonObject = {}
+      for (const key in item) {
+        transformedItem[key] = String(item[key])
+      }
+      return transformedItem
+    })
+  }
+
   const handleConfirm = (text: string) => {
-    try {
-      const jsonData = json5.parse(text)
-      const csv = jsonToCsv(jsonData)
-      setCreatedCsv(csv)
-      setIsTextValid(true)
-    } catch {
-      setIsTextValid(false)
-    }
+    const jsonData = json5.parse(text)
+    const csv = jsonToCsv(jsonData)
+    setCreatedCsv(csv)
   }
 
   return (
@@ -170,19 +170,19 @@ export default function Home() {
                     : 'bg-gray-300 cursor-not-allowed'
                 }`}
                 onClick={() => handleConfirm(text)}
-                // disabled={!isTextValid}
+                disabled={!isTextValid}
               >
                 <span>Converter</span>
                 <FileJson className="w-5 h-5" />
               </Button>
             </div>
 
-            {createdCsv && (
+            {createdCsv && text && (
               <div className="mt-8">
                 <label className="text-sm font-medium text-gray-600 block mb-4">
                   Saída do CSV:
                 </label>
-                <CsvTable csvData={createdCsv} />
+                <CsvTable parsedData={transformJsonString(text)} />
                 <div className="flex justify-center mt-4">
                   <Button
                     className="px-4 py-2 bg-[#0d8842] hover:bg-green-600 text-white rounded-lg shadow-md flex items-center gap-2"
