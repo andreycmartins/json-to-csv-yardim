@@ -105,12 +105,14 @@ export default function Home() {
     const newText = e.target.value
     setText(newText)
 
-    try {
-      json5.parse(newText)
-      setIsTextValid(true)
-    } catch {
-      setIsTextValid(false)
-    }
+    setIsTextValid(() => {
+      try {
+        json5.parse(newText)
+        return true
+      } catch {
+        return false
+      }
+    })
   }
 
   const cleanInput = () => {
@@ -119,6 +121,7 @@ export default function Home() {
   }
 
   const handleConfirm = (text: string) => {
+    if (!isTextValid) return
     const jsonData = json5.parse(text)
     const csv = jsonToCsv(jsonData)
     setCreatedCsv(csv)
